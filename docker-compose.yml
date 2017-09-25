@@ -3,6 +3,8 @@ version: '2'
 services:
     db:
         image: mysql
+        ports:
+            - 3307:3306
         volumes:
             - "./.data/db:/var/lib/mysql"
         environment:
@@ -10,14 +12,17 @@ services:
             MYSQL_DATABASE: ${MYSQL_DATABASE}
             MYSQL_USER: ${MYSQL_USER}
             MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    php:
-        build:
-            context: php7-fpm
-            args:
-                TIMEZONE: ${TIMEZONE}
+    mongodb:
+        image: mongo
+        ports:
+            - 27017:27017
+        container_name: "mongodb"
+        environment:
+            - MONGO_DATA_DIR=/data/db
+            - MONGO_LOG_DIR=/dev/null
         volumes:
-            - ${SYMFONY_APP_PATH}:/var/www/symfony
-            - ./logs/symfony:/var/www/symfony/app/logs
+            - "./.data/mongodb:/data/db"
+        command: mongod --smallfiles --logpath=/dev/null
     nginx:
         build: nginx
         ports:
@@ -26,6 +31,14 @@ services:
             - php
         volumes:
             - ./logs/nginx/:/var/log/nginx
+    php:
+        build:
+            context: php7-fpm
+            args:
+                TIMEZONE: ${TIMEZONE}
+        volumes:
+            - ${APP_PATH}:/var/www/#APP_NAME
+            - ./logs/#APP_NAME:/var/www/#APP_NAME/var/logs
     elk:
         image: willdurand/elk
         ports:
